@@ -37,6 +37,7 @@ public class Client implements ActionListener {
         p1.add(back);
         
         back.addMouseListener(new MouseAdapter() {
+            @Override
             public void mouseClicked(MouseEvent ae) {
                 System.exit(0);
             }
@@ -70,7 +71,7 @@ public class Client implements ActionListener {
         morevert.setBounds(420, 20, 10, 25);
         p1.add(morevert);
         
-        JLabel name = new JLabel("Naveen");
+        JLabel name = new JLabel("Bunty");
         name.setBounds(110, 15, 100, 18);
         name.setForeground(Color.WHITE);
         name.setFont(new Font("SAN_SERIF", Font.BOLD, 18));
@@ -107,10 +108,10 @@ public class Client implements ActionListener {
         f.setVisible(true);
     }
     
+    @Override
     public void actionPerformed(ActionEvent ae) {
         try {
             String out = text.getText();
-
             JPanel p2 = formatLabel(out);
 
             a1.setLayout(new BorderLayout());
@@ -126,9 +127,11 @@ public class Client implements ActionListener {
 
             text.setText("");
 
-            f.repaint();
-            f.invalidate();
-            f.validate();
+            SwingUtilities.invokeLater(() -> {
+                f.repaint();
+                f.invalidate();
+                f.validate();
+            });
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -164,23 +167,28 @@ public class Client implements ActionListener {
             Socket s = new Socket("127.0.0.1", 6001);
             DataInputStream din = new DataInputStream(s.getInputStream());
             dout = new DataOutputStream(s.getOutputStream());
-            
-            while(true) {
-                a1.setLayout(new BorderLayout());
-                String msg = din.readUTF();
-                JPanel panel = formatLabel(msg);
 
-                JPanel left = new JPanel(new BorderLayout());
-                left.add(panel, BorderLayout.LINE_START);
-                vertical.add(left);
-                
-                vertical.add(Box.createVerticalStrut(15));
-                a1.add(vertical, BorderLayout.PAGE_START);
-                
-                f.validate();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
+            new Thread(() -> {
+                try {
+                    while (true) {
+                        String msg = din.readUTF();
+                        JPanel panel = formatLabel(msg);
+
+                        JPanel left = new JPanel(new BorderLayout());
+                        left.add(panel, BorderLayout.LINE_START);
+
+                        SwingUtilities.invokeLater(() -> {
+                            vertical.add(left);
+                            vertical.add(Box.createVerticalStrut(15));
+                            a1.add(vertical, BorderLayout.PAGE_START);
+
+                            f.validate();
+                        });
+                    }
+                } catch (IOException e) {
+                }
+            }).start();
+        } catch (IOException e) {
         }
     }
 }
